@@ -15,23 +15,16 @@ https://github.com/swagger-api/swagger-editor/releases
 #### Install http server
 ```
 npm install -g http-server
-```
 
-```
 cd swagger-editor
 npm install 
-```
 
-```
 cd swagger-ui
 npm install 
-```
 
-```
 http-server swagger-editor -a 127.0.0.1 -p 8080
 http://localhost:8080
-```
-```
+
 http-server swagger-ui -a 127.0.0.1 -p 8081
 http://localhost:8081/dist
 ```

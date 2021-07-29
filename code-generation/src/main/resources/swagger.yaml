@@ -1,0 +1,101 @@
+openapi: 3.0.0
+info:
+  title: Book Store API
+  version: 1.0.0
+paths:
+  /api/v1/products:
+    post:
+      description: Add a product to the catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+      responses:
+        200:
+          description: The product has been created.
+        500:
+          $ref: '#/components/responses/HttpStatusInternalServerError'
+    get:
+      parameters: 
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        200:
+          description: This is a list of products in the catalog
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        500:
+          $ref: '#/components/responses/HttpStatusInternalServerError'
+  /api/v1/products/{productId}:
+    get:
+      parameters: 
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: integer
+            example: 12345
+      responses:
+        200:
+          description: This is a single result 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        500:
+          $ref: '#/components/responses/HttpStatusInternalServerError'
+components:
+  parameters:
+    PageNumber:
+      in: query
+      name: pageNumber
+      required: false
+      description: Page number to return
+      schema:
+        type: integer
+        example: 1
+    PageSize:
+      in: query
+      name: pageSize
+      description: Number of results in the page
+      schema:
+        type: integer 
+        example: 10
+        maximum: 100
+  schemas:
+    Product:
+      type: object 
+      required: 
+        - name
+      properties:
+        id:
+          type: integer
+          example: 3001
+        name:
+          type: string
+          example: Lemon Water
+  responses:
+    HttpStatusInternalServerError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              statusCode:
+                type: string
+                example: 500
+              message:
+                type: string
+                example: This is an unexpected error
+                
+                
+      
+        
+      
+          
