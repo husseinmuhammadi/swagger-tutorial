@@ -20,8 +20,9 @@
     </properties>
 
     <modules>
-        <module>documentation</module>
-        <module>code-generation</module>
+<!--        <module>documentation</module>-->
+<!--        <module>code-generation</module>-->
+        <module>code-generation-with-documentation</module>
     </modules>
 
     <dependencyManagement>
