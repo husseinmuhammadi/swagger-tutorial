@@ -16,8 +16,9 @@
     <properties>
         <java.version>11</java.version>
 
-        <openapi-generator-maven-plugin.version>4.3.0</openapi-generator-maven-plugin.version>
         <springfox-swagger2.version>2.9.2</springfox-swagger2.version>
+        <openapi-generator-maven-plugin.version>5.1.0</openapi-generator-maven-plugin.version>
+        <openapi-generator.root.package>com.spg.icvpi.app.rest</openapi-generator.root.package>
     </properties>
 
     <build>
@@ -29,7 +30,7 @@
             <plugin>
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
-                <version>5.1.0</version>
+                <version>${openapi-generator-maven-plugin.version}</version>
                 <executions>
                     <execution>
                         <goals>
@@ -44,8 +45,31 @@
                                 <dateLibrary>java8</dateLibrary>
                                 <serializableModel>true</serializableModel>
                             </configOptions>
+
                             <inputSpec>${project.basedir}/src/main/resources/swagger.yaml</inputSpec>
                             <generatorName>spring</generatorName>
+                            <output>target/generated-sources</output>
+                            <generateApis>true</generateApis>
+                            <generateModels>true</generateModels>
+                            <generateSupportingFiles>true</generateSupportingFiles>
+                            <supportingFilesToGenerate>ApiUtil.java</supportingFilesToGenerate>
+
+                            <skipIfSpecIsUnchanged>true</skipIfSpecIsUnchanged>
+                            <generateApiDocumentation>true</generateApiDocumentation>
+                            <typeMappings>
+                                <typeMapping>OffsetDate=LocalDate</typeMapping>
+                                <typeMapping>OffsetDateTime=LocalDateTime</typeMapping>
+                            </typeMappings>
+                            <importMappings>
+                                <importMapping>java.time.OffsetDate=java.time.LocalDate</importMapping>
+                                <importMapping>java.time.OffsetDateTime=java.time.LocalDateTime</importMapping>
+                            </importMappings>
+                            <!--                            <library>okhttp-gson</library>-->
+
+
+                            <apiPackage>${openapi-generator.root.package}.v1.api</apiPackage>
+                            <modelPackage>${openapi-generator.root.package}.v1.model</modelPackage>
+                            <invokerPackage>${openapi-generator.root.package}.v1.invoker</invokerPackage>
                         </configuration>
                     </execution>
                 </executions>
