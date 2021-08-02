@@ -1,0 +1,118 @@
+openapi: 3.0.2
+info:
+  title: Common types for converter / validator
+  description: |
+    Common types for validator / converter API
+  version: '0.1.1'
+
+servers:
+  - url: http://localhost:8080
+    description: Internal staging server for testing
+
+security:
+  - bearerAuth: []
+
+components:
+
+  schemas:
+
+    ServerException:
+      description: "Generic server exception"
+      type: object
+      required:
+        - message
+      properties:
+        type:
+          description: "Exception class"
+          type: string
+        message:
+          description: "Exception message"
+          type: string
+        details:
+          description: "Stacktrace of the exception"
+          type: string
+
+    ValidationContextEnum:
+      type: string
+      enum:
+        - GENERAL
+
+    ValidationCategoryEnum:
+      description: "Possibly the phases of the correction human tasks"
+      type: string
+      enum:
+        - FIELD_ERROR
+        - DOCUMENT_MISSING
+        - APPROVAL_NEEDED
+        - INSURER_ERROR
+        - INSURANCE_ADDITIONAL_MESSAGE
+        - COMMENT_POS
+        - COMMISSION_MISSING
+
+    ValidationSeverityEnum:
+      type: string
+      enum:
+        - INFO
+        - WARNING
+        - WARNING_WITH_APPROVAL
+        - ERROR
+        - APPROVED
+
+    ValidationValuesTypeEnum:
+      type: string
+      enum:
+        - INTEGER
+        - DECIMAL
+        - DATE
+        - DATETIME
+        - STRING
+        - TRANSLATIONKEY
+
+    ValidationContextValues:
+      type: object
+      required:
+        - value
+        - format
+      properties:
+        value:
+          type: string
+        format:
+          $ref: '#/components/schemas/ValidationValuesTypeEnum'
+
+    ValidationResponse:
+      type: object
+      required:
+        - validationId
+        - category
+        - level
+        - messageKey
+        - severity
+      properties:
+        validationId:
+          description: "each drools rule has it's own validationId"
+          type: string
+        category:
+          $ref: '#/components/schemas/ValidationCategoryEnum'
+        level:
+          description: "level identifies, who should handle the problems returned by validator"
+          type: integer
+          format: int64
+          minimum: 1
+        messageKey:
+          description: "ref to find the correct translation with the appropriate placeholders for the context values"
+          type: string
+        severity:
+          $ref: '#/components/schemas/ValidationSeverityEnum'
+        contextValuesOfError:
+          description: "Placeholder values for the translation text"
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationContextValues'
+        reference:
+          description: "Identifies the field in question (identifies the gui element)"
+          type: string
+
+    ValidationResponseArray:
+      type: array
+      items:
+        $ref: '#/components/schemas/ValidationResponse'

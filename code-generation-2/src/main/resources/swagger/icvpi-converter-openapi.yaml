@@ -1,0 +1,426 @@
+openapi: 3.0.2
+info:
+  title: CarIn API for Converter
+  description: |
+    This API serves as interface of CarIn to send applications to converter
+  version: '0.2.0'
+
+servers:
+  - url: http://localhost:8080
+    description: Internal staging server for testing
+
+security:
+  - bearerAuth: []
+
+paths:
+
+  /api/application/submit:
+    post:
+      tags:
+        - Converter
+      description: "Submit application"
+      summary: "Submit new application"
+      operationId: postNewApplication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitApplicationRequest'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmitApplicationResponse'
+        400:
+          $ref: '#/components/responses/GeneralErrorResponse'
+        401:
+          $ref: '#/components/responses/GeneralErrorResponse'
+        500:
+          $ref: '#/components/responses/GeneralErrorResponse'
+
+  /api/application/state:
+    get:
+      tags:
+        - Converter
+      description: "Get the state of submitted application"
+      operationId: getApplicationState
+      parameters:
+        - name: insurer
+          in: query
+          description: "Insurance Company"
+          required: true
+          schema:
+            $ref: 'icvpi-application-openapi.yaml#/components/schemas/Insurer'
+        - name: businessCaseId
+          in: query
+          description: "Business case of the application"
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationStateResponse'
+        400:
+          $ref: '#/components/responses/GeneralErrorResponse'
+        401:
+          $ref: '#/components/responses/GeneralErrorResponse'
+        500:
+          $ref: '#/components/responses/GeneralErrorResponse'
+
+  /api/application/documents:
+    get:
+      tags:
+        - Converter
+      description: "Get application documents"
+      operationId: getApplicationDocuments
+      parameters:
+        - name: insurer
+          in: query
+          description: "Insurance Company"
+          required: true
+          schema:
+            $ref: 'icvpi-application-openapi.yaml#/components/schemas/Insurer'
+        - name: businessCaseId
+          in: query
+          description: "Business case of the application"
+          required: false
+          schema:
+            type: string
+        - name: policyNumber
+          in: query
+          description: "Policy number of the application"
+          required: false
+          schema:
+            type: string
+        - name: type
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/DocumentTypeEnum'
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+        400:
+          $ref: '#/components/responses/GeneralErrorResponse'
+        401:
+          $ref: '#/components/responses/GeneralErrorResponse'
+        500:
+          $ref: '#/components/responses/GeneralErrorResponse'
+
+  /api/application/createApplication:
+    post:
+      tags:
+        - Converter
+      description: "create application"
+      summary: "creates new application"
+      operationId: createApplication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApplicationRequest'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateApplicationResponse'
+        400:
+          $ref: '#/components/responses/GeneralErrorResponse'
+        401:
+          $ref: '#/components/responses/GeneralErrorResponse'
+        500:
+          $ref: '#/components/responses/GeneralErrorResponse'
+
+  /api/application/createOffer:
+    post:
+      tags:
+        - Converter
+      description: "create offer"
+      summary: "create new offer"
+      operationId: createOffer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOfferRequest'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateOfferResponse'
+        400:
+          $ref: '#/components/responses/GeneralErrorResponse'
+        401:
+          $ref: '#/components/responses/GeneralErrorResponse'
+        500:
+          $ref: '#/components/responses/GeneralErrorResponse'
+
+  /api/application/calculateOffer:
+    post:
+      tags:
+        - Converter
+      description: "calculate offer"
+      summary: "calculate new offer"
+      operationId: calculateOffer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalculateOfferRequest'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalculateOfferResponse'
+        400:
+          $ref: '#/components/responses/GeneralErrorResponse'
+        401:
+          $ref: '#/components/responses/GeneralErrorResponse'
+        500:
+          $ref: '#/components/responses/GeneralErrorResponse'
+
+components:
+
+  responses:
+    GeneralErrorResponse:
+      description: General Error Response
+      content:
+        application/json:
+          schema:
+            $ref: 'icvpi-common-openapi.yaml#/components/schemas/ServerException'
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+
+    DocumentTypeEnum:
+      description: "Allowed document types"
+      type: string
+      enum:
+        - POLICY
+        - APPLICATION
+        - OFFER
+
+    DocumentResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/Document'
+
+    Document:
+      description: "Document object"
+      required:
+        - mimeType
+        - content
+        - documentType
+      properties:
+        name:
+          type: string
+        mimeType:
+          type: string
+        content:
+          type: string
+        documentType:
+          $ref: '#/components/schemas/DocumentTypeEnum'
+
+    SubmitApplicationRequest:
+      type: object
+      required:
+        - applicationContainer
+      properties:
+        applicationContainer:
+          $ref: 'icvpi-application-openapi.yaml#/components/schemas/ApplicationContainer'
+        businessCaseId:
+          description: "optional: if first try failed"
+          type: string
+        overwriteBusinessCaseData:
+          description: "optional: default is false. if this flag is set to true, all data from the applicationContainer for the supplied BusinessCaseId should be overwritten/recalculated"
+          type: boolean
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApplicationDocument'
+
+    ApplicationDocument:
+      type: object
+      required:
+        - name
+        - content
+        - mimeType
+      properties:
+        name:
+          description: "Document name"
+          type: string
+        content:
+          description: "Base64 encoded String containing the physical document"
+          type: string
+        mimeType:
+          description: "Document mime type"
+          type: string
+
+    ApplicationStateEnum:
+      description: "Possible states of the application"
+      type: string
+      enum:
+        - SUBMITTED
+        - REJECTED
+        - POLICIED
+        - ERROR
+        - CANCELLED
+
+    SubmitApplicationResponse:
+      type: object
+      required:
+        - state
+      properties:
+        businessCaseId:
+          type: string
+        state:
+          $ref: '#/components/schemas/ApplicationStateEnum'
+        validationMessages:
+          $ref: 'icvpi-common-openapi.yaml#/components/schemas/ValidationResponseArray'
+
+    StateEvent:
+      type: object
+      properties:
+        eventState:
+          type: string
+        comment:
+          type: string
+        stateId:
+          type: string
+        userName:
+          type: string
+        timestamp:
+          type: string
+          description: iso-format (treated as LocalDateTime). e.g. 2019-09-03T17:06:52.597Z
+          format: date-time
+
+    ApplicationStateResponse:
+      type: object
+      required:
+        - applicationState
+      properties:
+        policyNumber:
+          type: string
+        personNumber:
+          type: string
+        applicationState:
+          $ref: '#/components/schemas/ApplicationStateEnum'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/StateEvent'
+
+    StatusTypeEnum:
+      description: "Allowed Status types"
+      type: string
+      enum:
+        - APPLICATION
+        - APPLICATION_WITH_WARNING
+        - OFFER
+        - OFFER_WITH_WARNING
+        - CALCULATED
+        - CALCULATED_WITH_WARNING
+        - ERROR
+
+    CreateApplicationRequest:
+      type: object
+      required:
+        - applicationContainer
+      properties:
+        businessCaseId:
+          description: "optional: in case of alternative applications for the same businesscase"
+          type: string
+        applicationContainer:
+          $ref: 'icvpi-application-openapi.yaml#/components/schemas/ApplicationContainer'
+
+    CreateApplicationResponse:
+      type: object
+      required:
+        - status
+        - documents
+        - applicationContainer
+      properties:
+        status:
+          $ref: '#/components/schemas/StatusTypeEnum'
+        validationMessages:
+          $ref: 'icvpi-common-openapi.yaml#/components/schemas/ValidationResponseArray'
+        businessCaseId:
+          type: string
+        documents:
+          $ref: '#/components/schemas/DocumentResponse'
+        applicationContainer:
+          $ref: 'icvpi-application-openapi.yaml#/components/schemas/ApplicationContainer'
+
+    CreateOfferRequest:
+      type: object
+      required:
+        - applicationContainer
+      properties:
+        offerId:
+          type: string
+        applicationContainer:
+          $ref: 'icvpi-application-openapi.yaml#/components/schemas/ApplicationContainer'
+
+    CreateOfferResponse:
+      type: object
+      required:
+        - status
+        - documents
+        - applicationContainer
+      properties:
+        status:
+          $ref: '#/components/schemas/StatusTypeEnum'
+        validationMessages:
+          $ref: 'icvpi-common-openapi.yaml#/components/schemas/ValidationResponseArray'
+        offerId:
+          type: string
+        documents:
+          $ref: '#/components/schemas/DocumentResponse'
+        applicationContainer:
+          $ref: 'icvpi-application-openapi.yaml#/components/schemas/ApplicationContainer'
+
+    CalculateOfferRequest:
+      type: object
+      required:
+        - applicationContainer
+      properties:
+        applicationContainer:
+          $ref: 'icvpi-application-openapi.yaml#/components/schemas/ApplicationContainer'
+
+    CalculateOfferResponse:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: '#/components/schemas/StatusTypeEnum'
+        validationMessages:
+          $ref: 'icvpi-common-openapi.yaml#/components/schemas/ValidationResponseArray'
+        applicationContainer:
+          $ref: 'icvpi-application-openapi.yaml#/components/schemas/ApplicationContainer'

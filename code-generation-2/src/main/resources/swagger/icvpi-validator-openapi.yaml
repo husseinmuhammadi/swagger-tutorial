@@ -1,0 +1,114 @@
+openapi: 3.0.2
+info:
+  title: CarIn API for Validator
+  description: |
+    This API serves as interface of CarIn to send applications to validator
+  version: '0.1.0'
+
+servers:
+  - url: http://localhost:8080
+    description: Internal staging server for testing
+
+security:
+  - bearerAuth: []
+
+paths:
+ 
+  /api/application/validate:
+    post:
+      tags: 
+        - Validator
+      description: "Validate application"
+      summary: "Validate application fields against defined drools rules"
+      operationId: postValidate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidationRequest'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: 'icvpi-common-openapi.yaml#/components/schemas/ValidationResponseArray'
+        400:
+          $ref: '#/components/responses/GeneralErrorResponse'
+        401:
+          $ref: '#/components/responses/GeneralErrorResponse'
+        500:
+          $ref: '#/components/responses/GeneralErrorResponse'
+
+components:
+
+  responses:
+    GeneralErrorResponse:
+      description: General Error Response
+      content:
+        application/json:
+          schema: 
+            $ref: 'icvpi-common-openapi.yaml#/components/schemas/ServerException'
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+
+    DocumentStateEnum:
+      type: string
+      enum:
+        - OK
+        - OPTIONAL
+        - MISSING
+        - NOT_VALID
+
+    DocumentState:
+      type: object
+      required:
+        - name
+        - definitionId
+        - state
+      properties:
+        name:
+          type: string
+        definitionId:
+          type: string
+        state:
+          $ref: '#/components/schemas/DocumentStateEnum'
+
+    Approval:
+      type: object
+      required:
+        - approverId
+        - validationId
+      properties:
+        approverId:
+          type: string
+        approverName:
+          type: string
+        validationId:
+          type: string
+
+    ValidationRequest:
+      type: object
+      required:
+        - applicationContainer
+        - validationContext
+      properties:
+        applicationContainer:
+          $ref: 'icvpi-application-openapi.yaml#/components/schemas/ApplicationContainer'
+        validationContext:
+          $ref: 'icvpi-common-openapi.yaml#/components/schemas/ValidationContextEnum'
+        documentStates:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentState'
+        approvals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Approval'

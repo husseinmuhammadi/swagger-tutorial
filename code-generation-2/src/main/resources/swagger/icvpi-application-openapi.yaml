@@ -1,0 +1,1456 @@
+openapi: 3.0.2
+info:
+  title: CarfinBS CarIn API for Applications
+  description: |
+    This API serves
+    * as interface of CarIn to receive applications from Application Manager
+  version: '1.1'
+servers:
+  - url: 'http://localhost:8003'
+paths:
+  /api/fod/receive:
+    post:
+      tags:
+        - receive
+      summary: receive
+      description: receive FO application from Application Manager
+      operationId: receive
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationContainer'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarinResponse'
+components:
+  schemas:
+
+    # ###############################################################
+    # Container to gather the application's components as vehicle,
+    # partner, products,..
+    # ###############################################################
+    ApplicationContainer:
+      description: |
+        Container to gather the application's components as vehicle,
+        partner, products,..
+      type: object
+      required:
+        - apiVersion
+        - appId
+        - appContext
+        - application
+        - products
+      properties:
+        apiVersion:
+          $ref: '#/components/schemas/ApiVersion'
+        appId:
+          type: string
+          format: uuid
+        appKey:
+          $ref: '#/components/schemas/ApplicationKey'
+        appContext:
+          $ref: '#/components/schemas/ApplicationContext'
+        application:
+          $ref: '#/components/schemas/Application'
+        personList:
+          $ref: '#/components/schemas/PersonList'
+        organisationList:
+          $ref: '#/components/schemas/OrganisationList'
+        products:
+          $ref: '#/components/schemas/Products'
+        vehicle:
+          $ref: '#/components/schemas/Vehicle'
+    # open-api interface version
+    ApiVersion:
+      type: string
+      description: the open-api interface version
+      default: '1.0'
+      readOnly: true
+    # array of involved persons referenced by application
+    PersonList:
+      description: list of involved persons referenced by application
+      type: array
+      items:
+        $ref: '#/components/schemas/Person'
+    # array of involved organisations referenced by application
+    OrganisationList:
+      description: list of involved organisations referenced by application
+      type: array
+      items:
+        $ref: '#/components/schemas/Organisation'
+
+    # ####################################################################
+    # partner information
+    # ####################################################################
+    PartnerType:
+      type: string
+      enum:
+        - ORGANISATION
+        - PERSON
+    PartnerReference:
+      description: |
+        Reference to determine the appropriate Partner from the Person/Organisation-lists
+        whereBy the partnerType indicates which list has to be used and
+        the listIndex (starting with 1) indicates the position in this list
+      type: object
+      required:
+        - partnerType
+        - listIndex
+      properties:
+        partnerType:
+          $ref: '#/components/schemas/PartnerType'
+        listIndex:
+          type: integer
+    GeneralPartnerInformation:
+      description: 'Commonly used properties of a Partner engaged in an application '
+      type: object
+      required:
+        - address
+      properties:
+        address:
+          $ref: '#/components/schemas/Address'
+        contacts:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Contact'
+        carfinPartnerNr:
+          type: string
+        carinPartnerNr:
+          type: string
+        bankAccount:
+          $ref: '#/components/schemas/BankAccount'
+        wholesaleCustomerNumber:
+          type: string
+        fleetSize:
+          type: integer
+          format: int32
+        uid:
+          type: string
+        ucid:
+          type: string
+        marketingApproved:
+          type: boolean
+          default: false
+        preferredContactChannel:
+          type: string
+        selfAssessmentChangeFlag:
+          description: indicates a change in selfassessement during resubmission
+          type: boolean
+        selfAssessmentUUID:
+          type: string
+          format: uuid
+        kindOfPayment:
+          $ref: '#/components/schemas/KindOfPayment'
+        debtorNumber:
+          type: string
+        preTaxAllowence:
+          type: boolean
+        debit:
+          description: |
+            if this is the person to be debited from (Abbuchung)
+          type: boolean
+    Organisation:
+      type: object
+      description: |
+        A Partner of subtype Organisation containing specific data for it
+      required:
+        - general
+        - companyName
+        - branch
+      properties:
+        general:
+          $ref: '#/components/schemas/GeneralPartnerInformation'
+        companyName:
+          description: |
+            contains the mainName (replaces the former concatenated VU name1 + name2)
+          type: string
+        additionalName1:
+          description: is handled as the former VU name3
+          type: string
+        additionalName2:
+          type: string
+        commercialRegistryNumber:
+          type: string
+        branch:
+          $ref: '#/components/schemas/CodedType'
+        legalForm:
+          type: string
+        legalFormCode:
+          type: string
+        foundingDate:
+          type: string
+          format: date
+        contactPerson:
+          $ref: '#/components/schemas/PartnerReference'
+        roleOfContactPerson:
+          $ref: '#/components/schemas/CodedType'
+    Person:
+      type: object
+      description: A Partner of subtype Person with specific data for it
+      required:
+        - general
+        - firstName
+        - lastName
+        - gender
+        - dateOfBirth
+      properties:
+        general:
+          $ref: '#/components/schemas/GeneralPartnerInformation'
+        salutation:
+          $ref: '#/components/schemas/Salutation'
+        academicTitle:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        additionalName:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          description: |
+            possible values for Gender are
+            * M .. Male
+            * W .. Female
+          type: string
+          enum:
+            - M
+            - W
+        jobTitle:
+          type: string
+        job:
+          $ref: '#/components/schemas/CodedType'
+    Salutation:
+      type: object
+      properties:
+        code:
+          description: |
+            possible values for salutationCode are
+            * MALE
+            * FEMALE
+            * FAMILY
+            * ORGANISATION
+            * A.D.
+          type: string
+          enum:
+            - MALE
+            - FEMALE
+            - FAMILY
+            - ORGANISATION
+            - A.D.
+        description:
+          type: string
+
+    # ####################################################
+    # The Application
+    # ####################################################
+    Application:
+      required:
+        - kindOfUsage
+        - typeOfCostumer
+        - mainApplicant
+        - originator
+        - salesPerson
+      type: object
+      properties:
+        docFlowId:
+          type: string
+        kindOfUsage:
+          type: string
+        packageId:
+          type: string
+        contractVersion:
+          description: former VU2 name was "Fassung"
+          type: string
+        automaticCheckResult:
+          type: boolean
+        specialCalculation:
+          type: boolean
+        forOwnAccount:
+          type: boolean
+          default: true
+        digitalSigned:
+          type: boolean
+        applicationDate:
+          type: string
+          format: date
+        creationDate:
+          type: string
+          format: date
+        currency:
+          type: string
+        currentGrossPremiumSumExclEngineRelTax:
+          type: number
+        currentGrossPremiumSumInclEngineRelTax:
+          type: number
+        licencePlateDistrict:
+          type: string
+        licencePlate:
+          type: string
+        segmentationNumber:
+          type: string
+        typeOfCostumer:
+          $ref: '#/components/schemas/CodedType'
+        specialAgreements:
+          type: array
+          maxItems: 3
+          minItems: 0
+          items:
+            type: string
+        monthlyPaymentSchedule:
+          type: boolean
+        paymentFrequency:
+          description: Zahlungsfrequenz
+          type: string
+          enum:
+            - MONTHLY
+            - QUARTERLY
+            - SEMI-ANNUALLY
+            - ANNUALLY
+        subannualSurcharge:
+          type: boolean
+        subannualSurchargePercentage:
+          type: number
+        sendContractTerms:
+          type: boolean
+        preContractInfo:
+          type: string
+        comment:
+          type: string
+        vvdCommentToInsurer:
+          type: string
+        salesPerson:
+          $ref: '#/components/schemas/SalesPerson'
+        insurerGLI:
+          $ref: '#/components/schemas/InsurerGLI'
+        originator:
+          $ref: '#/components/schemas/Originator'
+        dealer:
+          $ref: '#/components/schemas/Dealer'
+        intermediary:
+          $ref: '#/components/schemas/Intermediary'
+        mainApplicant:
+          $ref: '#/components/schemas/PartnerReference'
+        coApplicants:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartnerReference'
+        debtCollectionAddressee:
+          # description: Inkassoadressat
+          $ref: '#/components/schemas/PartnerReference'
+        commissionInsurance:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommissionInsurance'
+        masterAgreementNumber:
+          type: string
+        contractStartDate:
+          type: string
+          format: date
+        contractEndDate:
+          type: string
+          format: date
+    Originator:
+      type: object
+      required:
+        - dealerCode
+      properties:
+        workplace:
+          type: string
+        dealerCode:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 9999999
+        salesPersonCode:
+          type: integer
+          format: int64
+    Dealer:
+      type: object
+      required:
+        - dealerCode
+      properties:
+        dealerCode:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 9999999
+        name:
+          type: string
+        additionalName:
+          type: string
+        address:
+          $ref: '#/components/schemas/Address'
+        bankAccount:
+          $ref: '#/components/schemas/BankAccount'
+        commercialRegistryNumber:
+          type: string
+        companyCourt:
+          description: Firmengericht
+          type: string
+        uid:
+          type: string
+        contacts:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Contact'
+    SalesPerson:
+      type: object
+      required:
+        - salesPersonCode
+        - dealerCode
+        - firstName
+        - lastName
+      properties:
+        salesPersonCode:
+          type: integer
+          format: int64
+        dealerCode:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 9999999
+        firstName:
+          type: string
+        lastName:
+          type: string
+        additionalName:
+          type: string
+        academicTitle:
+          type: string
+        contacts:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Contact'
+    InsurerGLI:
+      description: "Insurer Generali specific and required information"
+      type: object
+      required:
+        - gisa
+        - businessUnit
+        - forwardID
+      properties:
+        gisa:
+          description: "GISA number is mandatory for GLI"
+          type: string
+        businessUnit:
+          description: "information about the business unit is mandatory for GLI"
+          type: string
+        forwardID:
+          description: "id to forward requests without license plate/vin within GLI"
+          type: string
+    Intermediary:
+      type: object
+      required:
+        - intermediaryNumber
+        - firstName
+        - lastName
+        - address
+      properties:
+        intermediaryNumber:
+          type: string
+        academicTitle:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        additionalName:
+          type: string
+        shortDesignation:
+          type: string
+        contacts:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Contact'
+        address:
+          $ref: '#/components/schemas/Address'
+    # ###############################################################
+    # application key
+    # ###############################################################
+    ApplicationKey:
+      type: object
+      required:
+        - offerNumber
+        - workplace
+        - dealerCode
+        - salesPersonCode
+      properties:
+        offerNumber:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 999999999
+        dealerCode:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 9999999
+        salesPersonCode:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 999999999
+        workplace:
+          type: string
+          minLength: 1
+          maxLength: 8
+    # ###############################################################
+    # application context
+    # ###############################################################
+    ApplicationContext:
+      type: object
+      required:
+        - domain
+        - action
+        - offerTimestamp
+      properties:
+        domain:
+          type: string
+        action:
+          $ref: '#/components/schemas/Action'
+        offerTimestamp:
+          type: string
+          description: iso-format (treated as LocalDateTime). e.g. 2019-09-03T17:06:52.597Z
+          format: date-time
+        carfinContractId:
+          type: string
+    Action:
+      type: string
+      description: |
+        allowed action codes
+      enum:
+        - NEW
+        - RESUBMIT
+        - CANCEL
+        - ADD_COMPONENT
+        - ACCESSION
+    # ###################################################################
+    # Products
+    # ###################################################################
+    Product:
+      required:
+        - productId
+        - duration
+        - installment
+        - netInstallment
+      properties:
+        productId:
+          type: string
+        productName:
+          type: string
+        duration:
+          type: integer
+        installment:
+          type: number
+        package:
+          type: string
+        netInstallment:
+          type: number
+    Tariff:
+      required:
+        - productType
+      type: object
+      properties:
+        productType:
+          type: string
+        tariffName:
+          type: string
+        tariffCode:
+          type: string
+    Discount:
+      required:
+        - name
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        percentage:
+          type: number
+        amount:
+          type: number
+        bonusMalusLevelOffset:
+          type: integer
+          format: int32
+        reason:
+          type: string
+    CommissionInsurance:
+      description: Provisionsdaten
+      properties:
+        insurer:
+          $ref: '#/components/schemas/Insurer'
+        intermediaryNumber:
+          type: string
+        acquisitionPercentage:
+          type: number
+        followupPercentage:
+          type: number
+        servicePercentage:
+          type: number
+    Insurance:
+      required:
+        - product
+      type: object
+      properties:
+        tariff:
+          $ref: '#/components/schemas/Tariff'
+        discounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Discount'
+        product:
+          $ref: '#/components/schemas/Product'
+        insurer:
+          $ref: '#/components/schemas/Insurer'
+        commission:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommissionInsurance'
+        insuranceTaxAmount:
+          type: number
+        insuranceTaxPercentage:
+          type: number
+        annualNetPremium:
+          description: Jahresnettopr\u00E4mie
+          type: number
+        annualGrossPremium:
+          description: Jahresbruttopr\00E4mie
+          type: number
+        currentGrossPremium:
+          description: Pr\00E4mie laut Zahlungsweise inkl. Versicherungssteuer
+          type: number
+        insuranceConditionsDelivered:
+          type: boolean
+    LiabilityInsurance:
+      required:
+        - insurance
+      type: object
+      properties:
+        calculationBasis:
+          type: number
+        reasonForTaxExemption:
+          type: string
+        engineRelatedInsuranceTax:
+          type: number
+        engineRelatedInsuranceTaxPremiumSurcharge:
+          description: Pr\u00E4mienzuschlag der motorbezogenen Versicherungssteuer
+          type: number
+        coverageAmount:
+          type: number
+        coveragePremiumSurcharge:
+          type: number
+        replacementCar:
+          type: boolean
+        replacementCarPremiumSurcharge:
+          type: number
+        insurance:
+          $ref: '#/components/schemas/Insurance'
+        bonusMalusLevel:
+          type: number
+        bonusMalusLevelAfterAdjustment:
+          type: number
+        previousLicensePlateNumber:
+          type: string
+        previousInsurer:
+          type: string
+        previousPolicyNumber:
+          type: string
+        connectionPolicyNumber:
+          type: string
+        connectionContractNumber:
+          type: string
+        damagesContributionAmount:
+          description: Stufenabh\u00E4ngiger Schadenersatztbeitrag
+          type: number
+        damagesContributionPremiumDiscount:
+          type: number
+        extensionOfAreaOfApplicability:
+          description: Erweiterung \u00F6rtlicher Geltungsbereich
+          type: boolean
+        extensionOfAreaOfApplicabilityPremiumSurcharge:
+          type: number
+        licensePlateGroupH:
+          type: string
+        additionalInsuranceBenefit:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdditionalInsuranceBenefit'
+    ComprehensiveInsurance:
+      required:
+        - insurance
+      type: object
+      properties:
+        calculationBasis:
+          type: number
+        customerAccessories:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomerAccessory'
+        deductible:
+          type: number
+        kindOfDeductible:
+          description: Art der Selbstbeteiligung
+          type: string
+        deductibleDiscountInPercent:
+          description: Selbstbeteiligungsabschlag in Prozent
+          type: number
+        premiumSurchargeAccordingToTariff:
+          description: Pr\u00E4mienzuschlag laut Tarif
+          type: number
+        additionalInsuranceBenefit:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdditionalInsuranceBenefit'
+        netRemunerationEnabled:
+          type: boolean
+        fixedBonus:
+          type: boolean
+        transferredInsuranceCreditor:
+          $ref: '#/components/schemas/TransferredInsuranceCreditor'
+        optionSmallGlasAndMore:
+          type: boolean
+        gapCoverage:
+          type: boolean
+        reinstatementValueInsurance:
+          description: Neuwertklausel
+          type: boolean
+        compensationOfVatOfTruck:
+          type: boolean
+        compensationOfVATofTruckPremiumSurcharge:
+          type: number
+        vehicleAgingSurchargeUsedCar:
+          description: Fahrzeugalterungszuschlag Gebrauchtwagen
+          type: number
+        preTaxAllowence:
+          description: Vorsteuerabzugsberechtigung
+          type: boolean
+        insurance:
+          $ref: '#/components/schemas/Insurance'
+        bonusMalusLevel:
+          type: number
+        bonusMalusLevelAfterAdjustment:
+          type: number
+        licensePlateGroupK:
+          type: string
+    TransferredInsuranceCreditor:
+      description: Vinkulierungsgl\u00E4ubiger
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          $ref: '#/components/schemas/Address'
+    CustomerAccessory:
+      required:
+        - grossPrice
+        - name
+      type: object
+      properties:
+        name:
+          type: string
+        grossPrice:
+          type: number
+    PassengerAccidentInsurance:
+      required:
+        - insurance
+      type: object
+      properties:
+        insurance:
+          $ref: '#/components/schemas/Insurance'
+        calculationBasis:
+          description: Kalkulationsbasis
+          type: number
+        additionalInsuranceBenefit:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdditionalInsuranceBenefit'
+    LegalProtectionInsurance:
+      required:
+        - insurance
+      type: object
+      properties:
+        insurance:
+          $ref: '#/components/schemas/Insurance'
+        calculationBasis:
+          description: Kalkulationsbasis
+          type: number
+        trafficLegalProtection:
+          description: VVD-Verkehrsrechtschutz
+          type: boolean
+        vehicleContractLegalProtection:
+          description: Fahrzeugvertragsrechtschutz
+          type: boolean
+        allVehicles:
+          description: alle Fahrzeuge
+          type: boolean
+        driverLegalProtection:
+          description: Lenkerrechtschutz
+          type: boolean
+        increasedAmountInsured:
+          description: erh\u00F6hte Versicherungssumme
+          type: number
+        increasedAmountInsuredPremiumSurcharge:
+          description: erh\u00F6hte Versicherungssumme Pr\u00E4mienzuschlag
+          type: number
+    AdditionalInsuranceBenefit:
+      description: zus\u00E4tzliche Versicherungsleistung
+      required:
+        - name
+        - code
+      type: object
+      properties:
+        name:
+          description: Bezeichnung
+          type: string
+        code:
+          description: Code
+          type: string
+        insuredAmount:
+          type: number
+    Products:
+      type: object
+      properties:
+        liabilityInsurance:
+          $ref: '#/components/schemas/LiabilityInsurance'
+        comprehensiveInsurance:
+          $ref: '#/components/schemas/ComprehensiveInsurance'
+        legalProtectionInsurance:
+          $ref: '#/components/schemas/LegalProtectionInsurance'
+        passengerAccidentInsurance:
+          $ref: '#/components/schemas/PassengerAccidentInsurance'
+
+    BankAccount:
+      description: |
+        Object contains
+        * currently ony the IBAN as required attribute
+        * account informations
+      type: object
+      required:
+        - iban
+      properties:
+        iban:
+          type: string
+          maxLength: 34
+        bic:
+          type: string
+          maxLength: 11
+        bankName:
+          type: string
+        bankAddress:
+          type: string
+    # ######################################################################
+    # Vehicle specification
+    # ######################################################################
+    # #################   discount #####################################
+    PriceDiscount:
+      type: object
+      required:
+        - discountAmount
+      properties:
+        discountInPercent:
+          type: number
+        discountAmount:
+          type: number
+    # #################   Additional equipment #########################
+    AdditionalEquipment:
+      type: object
+      required:
+        - code
+        - name
+        - netPrice
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        promotionLabel:
+          type: string
+        promotionCode:
+          type: string
+        residualValueRelevant:
+          type: boolean
+        novaRelevant:
+          type: boolean
+        netPrice:
+          type: number
+        discountable:
+          type: boolean
+        netDiscount:
+          $ref: '#/components/schemas/PriceDiscount'
+        baseForNova:
+          type: number
+        duration:
+          type: integer
+          format: int32
+        promotionInPercent:
+          type: number
+        promotionAbsolut:
+          type: number
+        promotionCalculationBase:
+          description: Margenkalkulationsbasis
+          type: number
+        comprehensiveInsuranceRelevant:
+          type: boolean
+        categoryLabel:
+          type: string
+        promotionDeclarationType:
+          description: |
+            flag indicating the type a numeric value should be treated as
+            * PERCENT percentual
+            * ABSOLUTE amount
+          type: string
+          enum:
+            - PERCENT
+            - ABSOLUTE
+    # #################   Accessories #########################
+    Accessory:
+      description: Zusatzausstattung
+      type: object
+      required:
+        - name
+        - netPrice
+        - novaRelevant
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        promotionLabel:
+          type: string
+        promotionCode:
+          type: string
+        residualValueRelevant:
+          type: boolean
+        netPrice:
+          type: number
+        novaRelevant:
+          type: boolean
+        discount:
+          $ref: '#/components/schemas/PriceDiscount'
+        comprehensiveInsuranceRelevant:
+          type: boolean
+    # #################   Technical specification #########################
+    TechnicalSpecification:
+      type: object
+      required:
+        - ps
+        - kw
+      properties:
+        ps:
+          type: integer
+          format: int32
+        kw:
+          type: integer
+          format: int32
+        fuelType:
+          type: string
+        driveType:
+          description: Antriebsart
+          type: string
+        transmissionType:
+          description: Getriebeart
+          type: string
+        maximumVehicleWeight:
+          description: Max. zul\u00E4ssiges Gesamtgewicht in kg
+          type: integer
+          format: int32
+        engineDisplacement:
+          description: Hubraum in ccm
+          type: integer
+          format: int32
+        seats:
+          description: Anzahl Sitze
+          type: integer
+          format: int32
+        particleEmission:
+          type: number
+        dieselParticleFilterLimitComplied:
+          type: boolean
+        co2Emission:
+          type: integer
+          format: int32
+        nox:
+          type: number
+        environmentallyFriendly:
+          type: boolean
+        payload:
+          description: Nutzlast
+          type: integer
+          format: int32
+        engineIdentificationNumber:
+          description: Motorkennbuchstabe
+          type: string
+    # #################   duration <-> km variations ##################
+    DurationKMVariation:
+      type: object
+      required:
+        - duration
+        - km
+      properties:
+        duration:
+          type: integer
+          format: int32
+        km:
+          type: integer
+          format: int32
+    # #################   price details #########################
+    Price:
+      type: object
+      required:
+        - novaInPercent
+        - vatInPercent
+        - totalPriceDiscountedInclNovaInclVat
+        - basePriceInclNovaExclVat
+      properties:
+        dateOfPriceList:
+          type: string
+          format: date
+        novaInPercent:
+          type: number
+        vatInPercent:
+          description: Mwst in Prozent
+          type: number
+        totalPriceDiscountedInclNovaInclVat:
+          description: in Vu Gesamtpreisbrutto
+          type: number
+        discountInclNovaInclVat:
+          $ref: '#/components/schemas/PriceDiscount'
+        basePriceInclNovaExclVat:
+          description: in VU Basispreisnettomitnova
+          type: number
+        basePriceInclNovaInclVat:
+          description: in VU Basispreisbruttomitnova
+          type: number
+        novaCalculationPeriod:
+          type: string
+          enum:
+            - DPFN1
+            - DPFN2
+            - DPFN3
+            - DPFN4
+            - DPFN5
+            - DPFN6
+            - DPFN7
+            - DPFN8
+            - DPFN9
+            - DPFN10
+            - DPFN11
+            - DPFN12
+            - DPFN13
+            - DPFN14
+            - DPFN15
+            - DPFN16
+            - DPFN17
+            - DPFN18
+            - DPFN19
+        listPriceExclNovaExclVat:
+          description: netto Listen-Preis
+          type: number
+        listPriceDiscountExclNovaExclVat:
+          type: number
+        promotionCalculationBase:
+          type: number
+        netSumAddEquipmentNovaRelevant:
+          # description: |
+          #   Netto summen von (Price/Discount) NoVa-relevanter Mehrausstattungen
+          #   (Nur f\u00FCr Neuwagen relevant)
+          $ref: '#/components/schemas/DiscountablePrice'
+        netSumAddEquipmentNotNovaRelevant:
+          # description: |
+          #   Netto summen von (Price/Discount) NICHT NoVa-relevanter Mehrausstattungen
+          #   (Nur f\u00FCr Neuwagen relevant)
+          $ref: '#/components/schemas/DiscountablePrice'
+        netSumAccessoriesNovaRelevant:
+          # description: |
+          #   Netto summen von (Price/Discount) NoVa-relevantem Zubeh\u00F6r
+          $ref: '#/components/schemas/DiscountablePrice'
+        netSumAccessoriesNotNovaRelevant:
+          # description: |
+          #   Netto summen von (Price/Discount) NICHT NoVa-relevantem Zubeh\u00F6r
+          $ref: '#/components/schemas/DiscountablePrice'
+        vvdListPrice:
+          type: number
+        vvdPurchasePrice:
+          type: number
+        vvdAdditionalEquipment:
+          type: number
+        vvdAdditionalEquipmentFree:
+          type: number
+    DiscountablePrice:
+      type: object
+      required:
+        - price
+        - discount
+      properties:
+        price:
+          type: number
+        discount:
+          type: number
+        discountInPercent:
+          type: number
+    # #################   colour and upholstery #########################
+    Color:
+      type: object
+      required:
+        - name
+      properties:
+        code:
+          description: Farbcode
+          type: string
+        name:
+          type: string
+        netPrice:
+          description: Netto Price (nicht rabbatiert, ohne Steuern)
+          type: number
+        netPriceDiscount:
+          # description: Netto Rabattbetrag
+          $ref: '#/components/schemas/PriceDiscount'
+        discountable:
+          type: boolean
+    Upholstery:
+      description: maybe not needed TODO
+      type: object
+      required:
+        - name
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        netPrice:
+          description: Netto Price (nicht rabbatiert, ohne Steuern)
+          type: number
+        netPriceDiscount:
+          # description: Netto Rabattbetrag
+          $ref: '#/components/schemas/PriceDiscount'
+        discountable:
+          type: boolean
+    # #################   vehicle #########################
+    CarType:
+      type: string
+      enum:
+        - USED_CAR
+        - DEMO_CAR
+        - NEW_CAR
+        - MANUAL_NEW_CAR
+    Vehicle:
+      type: object
+      required:
+        - carType
+        - technicalSpecification
+        - brandCode
+        - modelName
+        - price
+      properties:
+        carType:
+          $ref:  '#/components/schemas/CarType'
+        kindOfVehicle:
+          description: |
+            possible values are
+            * P or PKW
+            * L or LKW
+          type: string
+        kindOfRegistration:
+          description: |
+            possible values are
+            * NORMAL                    ... normale Zulassung
+            * REPLACEABLE_LICENCE_PLATE ... Wechselkennzeichen
+            * TRANSFER_LICENCE_PLATE    ... \u00DCberstellungskennzeichen
+          type: string
+          enum:
+            - NORMAL
+            - REPLACEABLE_LICENCE_PLATE
+            - TRANSFER_LICENCE_PLATE
+        ownWeight:
+          type: number
+        brandCode:
+          type: string
+        brandName:
+          type: string
+        manufacturerKeyNumber:
+          type: string
+        modelName:
+          type: string
+          format: int32
+        modelCode:
+          type: string
+        modelYear:
+          type: string
+        carRegistrationDate:
+          description: Fahrzeugzulassung
+          type: string
+          format: date
+        price:
+          $ref: '#/components/schemas/Price'
+        technicalSpecification:
+          $ref: '#/components/schemas/TechnicalSpecification'
+        additionalEquipments:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdditionalEquipment'
+        accessories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Accessory'
+        upholstery:
+          $ref: '#/components/schemas/Upholstery'
+        color:
+          $ref: '#/components/schemas/Color'
+        useWLTP:
+          type: boolean
+        co2Fallback:
+          type: boolean
+        technicalSerialNumber:
+          type: string
+        durationKMVariations:
+          type: array
+          items:
+            $ref: '#/components/schemas/DurationKMVariation'
+        usedCarData:
+          # description: additional information concerning used car contracts
+          $ref: '#/components/schemas/UsedCarData'
+        newCarData:
+          # description: additional information concerning new car contracts
+          $ref: '#/components/schemas/NewCarData'
+    UsedCarData:
+      type: object
+      description: additional information if application affects a used car
+      required:
+        - ageInMonths
+        - vin
+      properties:
+        carMileage:
+          type: integer
+          format: int32
+        ageInMonths:
+          type: integer
+          format: int32
+        vin:
+          description: VIN Nummer, verpflichtend f\u00FCr GW (Eigenmarken)
+          type: string
+        differentialTaxation:
+          description: |
+            possible values are
+            * DI
+            * RE
+          type: string
+        drivingSchoolOrRentVehicle:
+          type: boolean
+        initialCarRegistrationDate:
+          description: Erstzulassung
+          type: string
+          format: date
+        intendedPurpose:
+          description: Verwendungszweck
+          type: string
+        numberOfPreviousOwners:
+          type: integer
+          format: int32
+    NewCarData:
+      type: object
+      description: additional information if application affects a new car
+      properties:
+        vin:
+          description: VIN Nummer
+          type: string
+        differentialTaxation:
+          type: string
+        intendedPurpose:
+          description: Verwendungszweck
+          type: string
+        initialCarRegistrationDate:
+          description: Erstzulassung
+          type: string
+          format: date
+    # ###################################################################
+    # Enum and common types
+    # ###################################################################
+    ContactType:
+      description: |
+        Type of contact
+        * FIR ... land phone office
+        * PRI ... land phone private
+        * HAN ... mobile phone
+        * INT ... eMail-address
+        * FAX ... Fax
+      type: string
+      enum:
+        - FIR
+        - PRI
+        - HAN
+        - INT
+        - FAX
+    KindOfPayment:
+      description: |
+        Kind of Payment (former Buchungsart VU2), possible values.
+        * LST ... direct debit.
+        * DAU ... standing order.
+        * ZAS ... in invoice.
+      type: string
+      enum:
+        - LST
+        - DAU
+        - ZAS
+    CodedType:
+      description: |
+        Common used object containung a Code and the desciption
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+        description:
+          type: string
+    Contact:
+      type: object
+      required:
+        - contactType
+        - contactDetail
+      properties:
+        contactType:
+          $ref: '#/components/schemas/ContactType'
+        contactDetail:
+          type: string
+    Address:
+      type: object
+      description: Commonly used Address Object
+      properties:
+        street:
+          type: string
+        streetNumber:
+          description: not used by Carfin
+          type: string
+        addendum:
+          description: not used by Carfin
+          type: string
+        zipCode:
+          type: string
+          maxLength: 6
+        city:
+          type: string
+        countryCode:
+          description: ISO 3166 (2 Byte)
+          type: string
+          minLength: 2
+          maxLength: 2
+    Insurer:
+      type: string
+      enum:
+        - UAT
+        - GLI
+    StatusCode:
+      description: |
+        Possible states
+        ===============
+        * ACCEPTED("N")                          // Angenommen
+        * CALCULATORY_REQUIREMENTS("K")          // mit kalkulatorischen Auflagen
+        * REJECTED("L")                          // Abgelehnt
+        * MANUAL("M")                            // Manuell
+        * ERROR("F")                             // Fehler
+        * CANCELLATION_CONFIRMED("S")            // Storno best\u00E4tigt
+        * SUBMITTED_TWICE("D")                   // doppelt eingereicht
+        * ORGANISATIONAL_REQUIREMENTS("O")       // mit organisatorischen Auflagen
+        * ACTIVATED("A")                         // Aktiviert
+        * IN_PROGRESS("B")                       // in Bearbeitung
+        * SPECIAL_CALCULATION("8")               // Sonderkalkulation
+        * ADDITIONAL_INFORMATION("I")            // Sonderkalkulation
+        * CANCELLATION_REJECTED("J")             // Storno abgelehnt
+        * IMMEDIATE_OK("Z")                      // VU Bonit\u00E4tscheck OK
+        * STATE_UPDATE("U")                      // State update
+        * IMMEDIATE_NOT_OK("Y")                  // VU Bonit\u00E4tscheck Recherche
+        * SUBMITTED                              // Eingereicht (CarIn)
+        * APPLICATION_POLICIED                   // Antrag polizziert (CarIn)
+        * VALIDATION_INSURER                     // In Prüfung Versicherer (CarIn)
+        * CANCELLATION_REQUESTED                 // Storno angefordert (CarIn)
+      type: string
+      enum:
+        - ACCEPTED
+        - CALCULATORY_REQUIREMENTS
+        - REJECTED
+        - MANUAL
+        - ERROR
+        - CANCELLATION_CONFIRMED
+        - SUBMITTED_TWICE
+        - ORGANISATIONAL_REQUIREMENTS
+        - ACTIVATED
+        - IN_PROGRESS
+        - SPECIAL_CALCULATION
+        - ADDITIONAL_INFORMATION
+        - CANCELLATION_REJECTED
+        - IMMEDIATE_OK
+        - STATE_UPDATE
+        - IMMEDIATE_NOT_OK
+        - SUBMITTED
+        - APPLICATION_POLICIED
+        - VALIDATION_INSURER
+        - CANCELLATION_REQUESTED
+    # ###################################################################
+    # Responses
+    # ###################################################################
+    CarinResponse:
+      type: object
+      required:
+        - apiVersion
+        - appId
+        - appContext
+      properties:
+        apiVersion:
+          $ref: '#/components/schemas/ApiVersion'
+        appId:
+          type: string
+          format: uuid
+        appContext:
+          $ref: '#/components/schemas/ApplicationContext'
+        statusCode:
+          $ref: '#/components/schemas/StatusCode'
+        statusTimeStamp:
+          type: string
+          format: date-time
+        statusText:
+          type: string
+        additionalResponseDataCarin:
+          $ref: '#/components/schemas/AdditionalResponseDataCarin'
+
+    AdditionalResponseDataCarin:
+      type: object
+      properties:
+        policyNumber:
+          type: string
+        clerk:
+          type: string
+        company:
+          type: string
+
+    CarinAcknowledge:
+      type: object
+      required:
+        - apiVersion
+        - appId
+        - appContext
+      properties:
+        apiVersion:
+          $ref: '#/components/schemas/ApiVersion'
+        appId:
+          type: string
+          format: uuid
+        appContext:
+          $ref: '#/components/schemas/ApplicationContext'
+        statusTimeStamp:
+          type: string
+          format: date-time
