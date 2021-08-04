@@ -6,6 +6,7 @@ paths:
   /api/v1/products:
     post:
       description: Add a product to the catalog
+      operationId: addProduct
       requestBody:
         content:
           application/json:
@@ -17,6 +18,7 @@ paths:
         500:
           $ref: '#/components/responses/HttpStatusInternalServerError'
     get:
+      operationId: findAllProducts
       parameters: 
         - $ref: '#/components/parameters/PageNumber'
         - $ref: '#/components/parameters/PageSize'
@@ -33,6 +35,7 @@ paths:
           $ref: '#/components/responses/HttpStatusInternalServerError'
   /api/v1/products/{productId}:
     get:
+      operationId: findProductById
       parameters: 
         - in: path
           name: productId

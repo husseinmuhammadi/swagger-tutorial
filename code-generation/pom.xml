@@ -18,7 +18,7 @@
 
         <springfox-swagger2.version>2.9.2</springfox-swagger2.version>
         <openapi-generator-maven-plugin.version>5.1.0</openapi-generator-maven-plugin.version>
-        <openapi-generator.root.package>com.spg.icvpi.app.rest</openapi-generator.root.package>
+        <openapi-generator.root.package>com.javastudio.tutorial.rest</openapi-generator.root.package>
     </properties>
 
     <build>
@@ -27,27 +27,23 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+
             <plugin>
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
                 <version>${openapi-generator-maven-plugin.version}</version>
                 <executions>
                     <execution>
+                        <id>generate-product-api</id>
                         <goals>
                             <goal>generate</goal>
                         </goals>
-                        <phase>generate-sources</phase>
                         <configuration>
-                            <configOptions>
-                                <sourceFolder>openapi-generator</sourceFolder>
-                                <interfaceOnly>true</interfaceOnly>
-                                <useBeanValidation>true</useBeanValidation>
-                                <dateLibrary>java8</dateLibrary>
-                                <serializableModel>true</serializableModel>
-                            </configOptions>
-
-                            <inputSpec>${project.basedir}/src/main/resources/swagger.yaml</inputSpec>
+                            <inputSpec>${project.basedir}/src/main/resources/product-openapi.yaml</inputSpec>
                             <generatorName>spring</generatorName>
+<!--                            <library>spring-boot</library>-->
+<!--                            <library>okhttp-gson</library>-->
+
                             <output>target/generated-sources</output>
                             <generateApis>true</generateApis>
                             <generateModels>true</generateModels>
@@ -56,6 +52,7 @@
 
                             <skipIfSpecIsUnchanged>true</skipIfSpecIsUnchanged>
                             <generateApiDocumentation>true</generateApiDocumentation>
+
                             <typeMappings>
                                 <typeMapping>OffsetDate=LocalDate</typeMapping>
                                 <typeMapping>OffsetDateTime=LocalDateTime</typeMapping>
@@ -64,12 +61,19 @@
                                 <importMapping>java.time.OffsetDate=java.time.LocalDate</importMapping>
                                 <importMapping>java.time.OffsetDateTime=java.time.LocalDateTime</importMapping>
                             </importMappings>
-                            <!--                            <library>okhttp-gson</library>-->
 
 
                             <apiPackage>${openapi-generator.root.package}.v1.api</apiPackage>
                             <modelPackage>${openapi-generator.root.package}.v1.model</modelPackage>
                             <invokerPackage>${openapi-generator.root.package}.v1.invoker</invokerPackage>
+
+                            <configOptions>
+                                <sourceFolder>openapi-generator</sourceFolder>
+                                <interfaceOnly>true</interfaceOnly>
+                                <useBeanValidation>true</useBeanValidation>
+                                <dateLibrary>java8</dateLibrary>
+                                <serializableModel>true</serializableModel>
+                            </configOptions>
                         </configuration>
                     </execution>
                 </executions>

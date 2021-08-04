@@ -1,6 +1,6 @@
 package com.javastudio.tutorial.swagger.web.api;
 
-import org.openapitools.api.ApiApi;
+import com.javastudio.tutorial.rest.v1.api.ApiApi;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
