@@ -1,0 +1,87 @@
+openapi: 3.0.2
+info:
+  title: CarIn API for Artifact and Audit Logs
+  description: |
+    This API serves as interface of CarIn to find application artifacts
+  version: '0.1.0'
+
+servers:
+  - url: http://localhost:8080
+    description: Internal staging server for testing
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/artifacts:
+    get:
+      summary: "Get list of artifacts"
+      description: "Get list of artifacts for a given application-id"
+      operationId: getArtifacts
+      parameters:
+        - in: query
+          name: appId
+          required: true
+          description: CarIn application id
+          schema:
+            type: string
+            example: 04b67a66-942a-404f-927b-7db9c81c9788
+        - in: query
+          name: name
+          required: false
+          description: Type of artifact
+          schema:
+            type: string
+            example: CONVERTER_RESPONSE_SEND_APPLICATION_SPG_TO_GENERALI
+      responses:
+        200:
+          description: This is a list of artifacts for given appication id
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ArtifcatResponse'
+  /api/artifacts/{artifactId}:
+    get:
+      summary: "Get artifact data"
+      description: "Get the content of an artifact for given artifact-id"
+      operationId: getArtifactData
+      parameters:
+        - in: path
+          name: artifactId
+          required: true
+          description: "Artifact Id"
+          schema:
+            type: string
+            example: abcb4af0-4287-40ed-9854-6167bc73b14b
+      responses:
+        200:
+          description: This is the data for a specific artifact
+          content:
+            application/json:
+              schema:
+                type: string
+            application/xml:
+              schema:
+                type: string
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ArtifcatResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 40d042d6-004e-472b-9a8f-7b472936721f
+        name:
+          type: string
+          example: ENDPOINT_HEALTH_CHECK_REQUEST
+
+
+

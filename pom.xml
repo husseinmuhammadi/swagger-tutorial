@@ -23,8 +23,9 @@
 
     <modules>
 <!--        <module>documentation</module>-->
-<!--        <module>code-generation</module>-->
-        <module>code-generation-2</module>
+        <module>code-generation</module>
+<!--        <module>code-generation-2</module>-->
+<!--        <module>code-generation-3</module>-->
     </modules>
 
     <dependencyManagement>
