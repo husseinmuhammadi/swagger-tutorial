@@ -42,16 +42,18 @@
                             <inputSpec>${project.basedir}/src/main/resources/product-openapi.yaml</inputSpec>
                             <generatorName>spring</generatorName>
                             <library>spring-boot</library>
-<!--                            <library>okhttp-gson</library>-->
 
-                            <output>target/generated-sources</output>
+                            <output>${project.build.directory}/generated-sources</output>
+
                             <generateApis>true</generateApis>
                             <generateModels>true</generateModels>
                             <generateSupportingFiles>true</generateSupportingFiles>
                             <supportingFilesToGenerate>ApiUtil.java</supportingFilesToGenerate>
-
                             <skipIfSpecIsUnchanged>true</skipIfSpecIsUnchanged>
                             <generateApiDocumentation>true</generateApiDocumentation>
+
+                            <addCompileSourceRoot>true</addCompileSourceRoot>
+                            <generateApiTests>true</generateApiTests>
 
                             <typeMappings>
                                 <typeMapping>OffsetDate=LocalDate</typeMapping>
@@ -61,7 +63,6 @@
                                 <importMapping>java.time.OffsetDate=java.time.LocalDate</importMapping>
                                 <importMapping>java.time.OffsetDateTime=java.time.LocalDateTime</importMapping>
                             </importMappings>
-
 
                             <apiPackage>${openapi-generator.root.package}.v1.api</apiPackage>
                             <modelPackage>${openapi-generator.root.package}.v1.model</modelPackage>
